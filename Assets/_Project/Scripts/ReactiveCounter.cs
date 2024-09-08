@@ -16,6 +16,8 @@ public class ReactiveCounter : MonoBehaviour
     
     IDisposable subscription;
     CancellationTokenSource cts;
+    
+    IDisposable dispossable;
 
     private void Awake()
     {
@@ -26,21 +28,25 @@ public class ReactiveCounter : MonoBehaviour
 
     private void Start()
     {
-        Observable.FromEvent<int>(
+        var d1 = Observable.FromEvent<int>(
             handler => player.OnPlayerDamaged += handler,
             handler => player.OnPlayerDamaged -= handler
         ).Subscribe(
             damage => Debug.Log($"Player took {damage} damage!")
-        ).AddTo(this);
-        
-        player.CurrentHp.Subscribe(x => Debug.Log("Current HP: " + x)).AddTo(this);
-        player.IsDead.Where(isDead => isDead == true).Subscribe(_ => coinButton.interactable = false).AddTo(this);
+        );
+
+        var d2 = player.CurrentHp.Subscribe(x => Debug.Log("Current HP: " + x));
+        //player.CurrentHp.Subscribe(x => Debug.Log("Current HP: " + x)).AddTo(this);
+        var d3 = player.IsDead.Where(isDead => isDead == true).Subscribe(_ => coinButton.interactable = false);
+        //player.IsDead.Where(isDead => isDead == true).Subscribe(_ => coinButton.interactable = false).AddTo(this);
         
         subscription = coinButton.onClick.AsObservable(cts.Token).Subscribe(_ =>
         {
             player.TakeDamage(99); //1
             counterText.text = (int.Parse(counterText.text) + 1).ToString();
         });
+        
+        dispossable = Disposable.Combine(d1,d2,d2,subscription);
     }
 
     private void OnDestroy()
