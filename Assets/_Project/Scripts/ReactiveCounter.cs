@@ -27,10 +27,10 @@ public class ReactiveCounter : MonoBehaviour
         cancelButton.onClick.AddListener(() => cts.Cancel());
     }
 
+    DisposableBag d; // Struct, best for performance
+    
     private void Start()
     {
-        var d = Disposable.CreateBuilder();
-        
         Observable.FromEvent<int>(
             handler => player.OnPlayerDamaged += handler,
             handler => player.OnPlayerDamaged -= handler
@@ -42,8 +42,6 @@ public class ReactiveCounter : MonoBehaviour
         //player.CurrentHp.Subscribe(x => Debug.Log("Current HP: " + x)).AddTo(this);
         player.IsDead.Where(isDead => isDead == true).Subscribe(_ => coinButton.interactable = false).AddTo(ref d);
         //player.IsDead.Where(isDead => isDead == true).Subscribe(_ => coinButton.interactable = false).AddTo(this);
-        
-        dispossable = d.Build();
         
         subscription = coinButton.onClick.AsObservable(cts.Token).Subscribe(_ =>
         {
