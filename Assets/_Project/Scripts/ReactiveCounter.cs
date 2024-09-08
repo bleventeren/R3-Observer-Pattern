@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using R3;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,25 +29,27 @@ public class ReactiveCounter : MonoBehaviour
 
     private void Start()
     {
-        var d1 = Observable.FromEvent<int>(
+        var d = Disposable.CreateBuilder();
+        
+        Observable.FromEvent<int>(
             handler => player.OnPlayerDamaged += handler,
             handler => player.OnPlayerDamaged -= handler
         ).Subscribe(
             damage => Debug.Log($"Player took {damage} damage!")
-        );
+        ).AddTo(ref d);
 
-        var d2 = player.CurrentHp.Subscribe(x => Debug.Log("Current HP: " + x));
+        player.CurrentHp.Subscribe(x => Debug.Log("Current HP: " + x)).AddTo(ref d);
         //player.CurrentHp.Subscribe(x => Debug.Log("Current HP: " + x)).AddTo(this);
-        var d3 = player.IsDead.Where(isDead => isDead == true).Subscribe(_ => coinButton.interactable = false);
+        player.IsDead.Where(isDead => isDead == true).Subscribe(_ => coinButton.interactable = false).AddTo(ref d);
         //player.IsDead.Where(isDead => isDead == true).Subscribe(_ => coinButton.interactable = false).AddTo(this);
+        
+        dispossable = d.Build();
         
         subscription = coinButton.onClick.AsObservable(cts.Token).Subscribe(_ =>
         {
             player.TakeDamage(99); //1
             counterText.text = (int.Parse(counterText.text) + 1).ToString();
         });
-        
-        dispossable = Disposable.Combine(d1,d2,d2,subscription);
     }
 
     private void OnDestroy()
