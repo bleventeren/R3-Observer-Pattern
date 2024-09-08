@@ -31,6 +31,12 @@ public class ReactiveCounter : MonoBehaviour
     
     private void Start()
     {
+        player.playerScore.Where(value => value > 0)
+            .Subscribe(_ => {
+                    counterText.text = player.playerScore.Value.ToString();
+            })
+            .AddTo(ref d);
+        
         Observable.FromEvent<int>(
             handler => player.OnPlayerDamaged += handler,
             handler => player.OnPlayerDamaged -= handler
@@ -46,7 +52,7 @@ public class ReactiveCounter : MonoBehaviour
         subscription = coinButton.onClick.AsObservable(cts.Token).Subscribe(_ =>
         {
             player.TakeDamage(99); //1
-            counterText.text = (int.Parse(counterText.text) + 1).ToString();
+            //counterText.text = (int.Parse(counterText.text) + 1).ToString();
         });
     }
 
